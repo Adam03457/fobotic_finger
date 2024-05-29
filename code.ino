@@ -20,12 +20,38 @@
 #define VYSTRI 0
 
 Servo myservo;
-int servo_pozicia = VYSTRI;
+int servo_positon = VYSTRI;
+
+void ovladanie(bool finger_input){
+  int i;
+  
+  if((finger_input == 0) && (servo_positon == OHNI)){
+    for(i = 90; i >= VYSTRI; i--){ // postupné vystretie prstu
+      myservo.write(i);
+      delay(10);
+    }
+    servo_positon = VYSTRI;
+  } else if((finger_input == 1) && (servo_positon == VYSTRI)){
+    for(i = 0; i <= 90; i++){ // postupné ohnutie prstu
+      myservo.write(i);
+      delay(10);
+    }
+    servo_positon = OHNI;
+  }
+}
+
+
+void test_servo(bool test_input, int expected_position){
+  ovladanie(test_input);
+  Serial.print("Vystup testu: ");
+  Serial.print((servo_positon == expected_position) ? "OK\n" : "CHYBA\n");
+}
+
 
 void setup(){
   Serial.begin(9600); // inicializácia seriovej komunikácie
   myservo.attach(PRST_PIN);
-  myservo.write(servo_pozicia);
+  myservo.write(servo_positon);
   delay(1000); // oneskorenie dáva možnosť čakať na sériový monitor bez blokovania, ak sa žiadny nenájde
 
   // definované v thingProperties.h
@@ -37,28 +63,16 @@ void setup(){
   // umožňuje získavať informácie a chyby spojené zo sieťou a IoT cloud
   setDebugMessageLevel(2);
   ArduinoCloud.printDebugInfo();
+
+  // test serva a ovládania
+  test_servo(1, OHNI);
+  test_servo(0, VYSTRI);
 }
 
 void loop(){
   ArduinoCloud.update(); 
-
-  int i;
-
-  if((finger == 0) && (servo_pozicia == OHNI)){
-    for(i = 90; i >= VYSTRI; i--){ // postupné vystretie prstu
-      myservo.write(i);
-      delay(10);
-    }
-    servo_pozicia = 0;
-  } else if((finger == 1) && (servo_pozicia == VYSTRI)){
-    for(i = 0; i <= 90; i++){ // postupné ohnutie prstu
-      myservo.write(i);
-      delay(10);
-    }
-    servo_pozicia = 90;
-  }
+  ovladanie(finger);
 }
-
 /*
   Since Finger is READ_WRITE variable, onFingerChange() is
   executed every time a new value is received from IoT Cloud.
